@@ -11,7 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Phuc vu file tinh tu thu muc frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const Food = require('./models/Food');
@@ -22,7 +21,6 @@ mongoose.connect(mongoUri)
   .then(() => console.log('Ket noi MongoDB thanh cong!'))
   .catch(err => console.log('Loi ket noi MongoDB:', err));
 
-// Dinh tuyen trang chu hien thi giao dien index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -43,6 +41,24 @@ app.post('/api/foods', async (req, res) => {
     res.status(201).json(food);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// API DELETE - Xoa mon an theo ID
+app.delete('/api/foods/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID không hợp lệ' });
+    }
+    const food = await Food.findByIdAndDelete(id);
+    if (!food) {
+      return res.status(404).json({ message: 'Không tìm thấy món ăn' });
+    }
+    res.json({ message: 'Xóa món ăn thành công!' });
+  } catch (err) {
+    console.error('Loi xoa mon:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -9,8 +9,10 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; border-radius: 3px; }
         button:hover { background-color: #45a049; }
+        .btn-delete { background-color: #f44336; margin-top: 10px; padding: 6px 12px; }
+        .btn-delete:hover { background-color: #d32f2f; }
         .food-card { border: 1px solid #ddd; padding: 15px; margin-top: 10px; border-radius: 5px; }
         .food-name { color: #d32f2f; margin: 0 0 5px 0; }
         .price { font-weight: bold; color: #388e3c; margin: 0 0 5px 0; }
@@ -40,7 +42,7 @@
     <div id="food-list">Đang tải dữ liệu...</div>
 
     <script>
-        const API_URL = 'https://wild-apparition-jr9v964rvvv6cj6rq-5000.app.github.dev/api/foods';
+        const API_URL = '/api/foods';
 
         async function loadFoods() {
             try {
@@ -62,11 +64,31 @@
                         <h3 class="food-name">${food.name}</h3>
                         <p class="price">Giá: ${food.price} VNĐ</p>
                         <p style="margin:0;">${food.description || ''}</p>
+                        <button class="btn-delete" onclick="deleteFood('${food._id}')">Xóa món</button>
                     `;
                     listDiv.appendChild(div);
                 });
             } catch (error) {
                 document.getElementById('food-list').innerHTML = '<p>Lỗi kết nối đến Backend!</p>';
+            }
+        }
+
+        async function deleteFood(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa món ăn này không?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Xóa món ăn thành công!');
+                    loadFoods();
+                } else {
+                    alert('Xóa món ăn thất bại!');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra khi xóa món ăn!');
             }
         }
 
