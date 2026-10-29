@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách Món ăn</title>
+    <title>Quản Lý Thực Đơn Quán Ăn</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        .form-group { margin-bottom: 15px; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 650px; margin: auto; }
+        .form-group { margin-bottom: 12px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; border-radius: 3px; }
-        button:hover { background-color: #45a049; }
-        .btn-delete { background-color: #f44336; margin-top: 10px; padding: 6px 12px; }
+        button { padding: 8px 12px; border: none; cursor: pointer; border-radius: 4px; color: white; }
+        .btn-add { background-color: #4CAF50; }
+        .btn-add:hover { background-color: #45a049; }
+        .btn-edit { background-color: #ff9800; margin-right: 5px; }
+        .btn-edit:hover { background-color: #e68a00; }
+        .btn-delete { background-color: #f44336; }
         .btn-delete:hover { background-color: #d32f2f; }
+        .btn-cancel { background-color: #757575; }
         .food-card { border: 1px solid #ddd; padding: 15px; margin-top: 10px; border-radius: 5px; }
         .food-name { color: #d32f2f; margin: 0 0 5px 0; }
         .price { font-weight: bold; color: #388e3c; margin: 0 0 5px 0; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-box input { flex: 1; padding: 8px; }
     </style>
 </head>
 <body>
-    <h1>Thêm Món Ăn Mới</h1>
-    <form id="add-food-form">
+    <h1 id="form-title">Thêm Món Ăn Mới</h1>
+    <form id="food-form">
+        <input type="hidden" id="food-id">
         <div class="form-group">
             <label>Tên món ăn:</label>
             <input type="text" id="name" required placeholder="Nhập tên món ăn">
@@ -33,27 +40,35 @@
             <label>Mô tả:</label>
             <input type="text" id="description" placeholder="Nhập mô tả ngắn">
         </div>
-        <button type="submit">Thêm món</button>
+        <button type="submit" id="btn-submit" class="btn-add">Thêm món</button>
+        <button type="button" id="btn-cancel" class="btn-cancel" style="display:none;" onclick="resetForm()">Hủy sửa</button>
     </form>
 
     <hr style="margin: 30px 0;">
 
-    <h2>Thực đơn Quán ăn</h2>
+    <h2>Thực Đơn Quán Ăn</h2>
+    
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="Tìm kiếm món ăn theo tên...">
+        <button type="button" class="btn-add" onclick="searchFoods()">Tìm kiếm</button>
+    </div>
+
     <div id="food-list">Đang tải dữ liệu...</div>
 
     <script>
         const API_URL = '/api/foods';
 
-        async function loadFoods() {
+        async function loadFoods(searchQuery = '') {
             try {
-                const response = await fetch(API_URL);
+                const url = searchQuery ? `${API_URL}?search=${encodeURIComponent(searchQuery)}` : API_URL;
+                const response = await fetch(url);
                 const foods = await response.json();
                 
                 const listDiv = document.getElementById('food-list');
                 listDiv.innerHTML = ''; 
 
                 if(!foods || foods.length === 0) {
-                    listDiv.innerHTML = '<p>Chưa có món ăn nào trong thực đơn.</p>';
+                    listDiv.innerHTML = '<p>Không tìm thấy món ăn nào.</p>';
                     return;
                 }
 
@@ -62,8 +77,9 @@
                     div.className = 'food-card';
                     div.innerHTML = `
                         <h3 class="food-name">${food.name}</h3>
-                        <p class="price">Giá: ${food.price} VNĐ</p>
-                        <p style="margin:0;">${food.description || ''}</p>
+                        <p class="price">Giá: ${food.price.toLocaleString()} VNĐ</p>
+                        <p style="margin:0 0 10px 0;">${food.description || ''}</p>
+                        <button class="btn-edit" onclick="editFood('${food._id}', '${food.name}', ${food.price}, '${food.description || ''}')">Sửa món</button>
                         <button class="btn-delete" onclick="deleteFood('${food._id}')">Xóa món</button>
                     `;
                     listDiv.appendChild(div);
@@ -73,14 +89,35 @@
             }
         }
 
+        function searchFoods() {
+            const query = document.getElementById('search-input').value.trim();
+            loadFoods(query);
+        }
+
+        function editFood(id, name, price, description) {
+            document.getElementById('form-title').innerText = 'Cập Nhật Món Ăn';
+            document.getElementById('food-id').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('price').value = price;
+            document.getElementById('description').value = description;
+            document.getElementById('btn-submit').innerText = 'Cập nhật món';
+            document.getElementById('btn-cancel').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').innerText = 'Thêm Món Ăn Mới';
+            document.getElementById('food-id').value = '';
+            document.getElementById('food-form').reset();
+            document.getElementById('btn-submit').innerText = 'Thêm món';
+            document.getElementById('btn-cancel').style.display = 'none';
+        }
+
         async function deleteFood(id) {
             if (!confirm('Bạn có chắc chắn muốn xóa món ăn này không?')) return;
 
             try {
-                const response = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE'
-                });
-
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
                 if (response.ok) {
                     alert('Xóa món ăn thành công!');
                     loadFoods();
@@ -92,28 +129,32 @@
             }
         }
 
-        document.getElementById('add-food-form').addEventListener('submit', async (e) => {
+        document.getElementById('food-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const newFood = {
+            const id = document.getElementById('food-id').value;
+            const foodData = {
                 name: document.getElementById('name').value,
                 price: Number(document.getElementById('price').value),
                 description: document.getElementById('description').value
             };
 
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newFood)
+                    body: JSON.stringify(foodData)
                 });
 
                 if (response.ok) {
-                    alert('Thêm món thành công!');
-                    document.getElementById('add-food-form').reset();
+                    alert(id ? 'Cập nhật món thành công!' : 'Thêm món thành công!');
+                    resetForm();
                     loadFoods();
                 } else {
-                    alert('Thêm món thất bại!');
+                    alert('Thao tác thất bại!');
                 }
             } catch (error) {
                 alert('Có lỗi xảy ra khi kết nối API!');

@@ -10,7 +10,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 const Food = require('./models/Food');
@@ -25,15 +24,22 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
+// GET /api/foods (Xem & Tim kiem mon an)
 app.get('/api/foods', async (req, res) => {
   try {
-    const foods = await Food.find();
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query.name = { $regex: search, $options: 'i' };
+    }
+    const foods = await Food.find(query);
     res.json(foods);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// POST /api/foods (Them mon an)
 app.post('/api/foods', async (req, res) => {
   try {
     const food = new Food(req.body);
@@ -44,20 +50,26 @@ app.post('/api/foods', async (req, res) => {
   }
 });
 
-// API DELETE - Xoa mon an theo ID
+// PUT /api/foods/:id (Cap nhat / Sua mon an)
+app.put('/api/foods/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const food = await Food.findByIdAndUpdate(id, req.body, { new: true });
+    if (!food) return res.status(404).json({ message: 'Khong tim thay mon an' });
+    res.json(food);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// DELETE /api/foods/:id (Xoa mon an)
 app.delete('/api/foods/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'ID không hợp lệ' });
-    }
     const food = await Food.findByIdAndDelete(id);
-    if (!food) {
-      return res.status(404).json({ message: 'Không tìm thấy món ăn' });
-    }
-    res.json({ message: 'Xóa món ăn thành công!' });
+    if (!food) return res.status(404).json({ message: 'Khong tim thay mon an' });
+    res.json({ message: 'Xoa thanh cong' });
   } catch (err) {
-    console.error('Loi xoa mon:', err);
     res.status(500).json({ message: err.message });
   }
 });
