@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Món ăn</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .food-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .food-name { color: #d32f2f; margin: 0 0 10px 0; }
+        .price { font-weight: bold; color: #388e3c; }
+    </style>
+</head>
+<body>
+    <h1>Thực đơn Quán ăn</h1>
+    <div id="food-list">Đang tải dữ liệu...</div>
+
+    <script>
+        async function loadFoods() {
+            try {
+                // Gọi API từ Backend của bạn
+                const response = await fetch('http://localhost:5000/api/foods');
+                const foods = await response.json();
+                
+                const listDiv = document.getElementById('food-list');
+                listDiv.innerHTML = ''; 
+
+                if(foods.length === 0) {
+                    listDiv.innerHTML = '<p>Chưa có món ăn nào.</p>';
+                    return;
+                }
+
+                // Hiển thị từng món ăn
+                foods.forEach(food => {
+                    const div = document.createElement('div');
+                    div.className = 'food-card';
+                    div.innerHTML = `
+                        <h3 class="food-name">${food.name}</h3>
+                        <p class="price">Giá: ${food.price} VNĐ</p>
+                        <p>${food.description || ''}</p>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            } catch (error) {
+                document.getElementById('food-list').innerHTML = '<p>Lỗi kết nối đến Backend!</p>';
+                console.error(error);
+            }
+        }
+
+        // Chạy hàm khi mở trang
+        loadFoods();
+    </script>
+</body>
+</html>
