@@ -5,49 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách Món ăn</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .food-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
-        .food-name { color: #d32f2f; margin: 0 0 10px 0; }
-        .price { font-weight: bold; color: #388e3c; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .food-card { border: 1px solid #ddd; padding: 15px; margin-top: 10px; border-radius: 5px; }
+        .food-name { color: #d32f2f; margin: 0 0 5px 0; }
+        .price { font-weight: bold; color: #388e3c; margin: 0 0 5px 0; }
     </style>
 </head>
 <body>
-    <h1>Thực đơn Quán ăn</h1>
+    <h1>Thêm Món Ăn Mới</h1>
+    <form id="add-food-form">
+        <div class="form-group">
+            <label>Tên món ăn:</label>
+            <input type="text" id="name" required placeholder="Nhập tên món ăn">
+        </div>
+        <div class="form-group">
+            <label>Giá (VNĐ):</label>
+            <input type="number" id="price" required placeholder="Nhập giá tiền">
+        </div>
+        <div class="form-group">
+            <label>Mô tả:</label>
+            <input type="text" id="description" placeholder="Nhập mô tả ngắn">
+        </div>
+        <button type="submit">Thêm món</button>
+    </form>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>Thực đơn Quán ăn</h2>
     <div id="food-list">Đang tải dữ liệu...</div>
 
     <script>
+        const API_URL = 'https://wild-apparition-jr9v964rvvv6cj6rq-5000.app.github.dev/api/foods';
+
         async function loadFoods() {
             try {
-                // Gọi API từ Backend của bạn
-                const response = await fetch('http://localhost:5000/api/foods');
+                const response = await fetch(API_URL);
                 const foods = await response.json();
                 
                 const listDiv = document.getElementById('food-list');
                 listDiv.innerHTML = ''; 
 
-                if(foods.length === 0) {
-                    listDiv.innerHTML = '<p>Chưa có món ăn nào.</p>';
+                if(!foods || foods.length === 0) {
+                    listDiv.innerHTML = '<p>Chưa có món ăn nào trong thực đơn.</p>';
                     return;
                 }
 
-                // Hiển thị từng món ăn
                 foods.forEach(food => {
                     const div = document.createElement('div');
                     div.className = 'food-card';
                     div.innerHTML = `
                         <h3 class="food-name">${food.name}</h3>
                         <p class="price">Giá: ${food.price} VNĐ</p>
-                        <p>${food.description || ''}</p>
+                        <p style="margin:0;">${food.description || ''}</p>
                     `;
                     listDiv.appendChild(div);
                 });
             } catch (error) {
                 document.getElementById('food-list').innerHTML = '<p>Lỗi kết nối đến Backend!</p>';
-                console.error(error);
             }
         }
 
-        // Chạy hàm khi mở trang
+        document.getElementById('add-food-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newFood = {
+                name: document.getElementById('name').value,
+                price: Number(document.getElementById('price').value),
+                description: document.getElementById('description').value
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newFood)
+                });
+
+                if (response.ok) {
+                    alert('Thêm món thành công!');
+                    document.getElementById('add-food-form').reset();
+                    loadFoods();
+                } else {
+                    alert('Thêm món thất bại!');
+                }
+            } catch (error) {
+                alert('Có lỗi xảy ra khi kết nối API!');
+            }
+        });
+
         loadFoods();
     </script>
 </body>
